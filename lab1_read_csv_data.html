@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSV Data Selection</title>
+
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 20px auto;
+      max-width: 600px;
+      padding: 20px;
+      background-color: #f4f4f4;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    div {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+
+    p {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>CSV Data Selection</h2>
+
+  <div>
+    <label for="selectTest">Select Test:</label>
+    <select id="selectTest"></select>
+  </div>
+
+  <div>
+    <label for="selectAge">Select Age:</label>
+    <select id="selectAge"></select>
+  </div>
+
+  <p id="result">Result: </p>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // URL to your CSV file in S3 bucket or remote source
+      const csvEndpoint = 'https://nk-testing-demo.s3.amazonaws.com/my-simple-csv.csv';
+
+      // CSV data
+      let csvData;
+      let headerRow;
+      let dataRows;
+
+      // Function to update result based on selected values
+      function updateResult() {
+        const selectedTestIndex = selectTest.value;
+        const selectedAge = selectAge.value;
+
+        // Find the corresponding value in the CSV data
+        let resultValue = "";
+        for (let i = 0; i < dataRows.length; i++) {
+          if (dataRows[i][0] == selectedAge) {
+            resultValue = dataRows[i][selectedTestIndex];
+            break;
+          }
+        }
+
+        // Display the result
+        const resultParagraph = document.getElementById("result");
+        resultParagraph.textContent = "Result: " + resultValue;
+      }
+
+      // Fetch CSV file using the Fetch API
+      fetch(csvEndpoint)
+        .then(response => response.text())
+        .then(data => {
+          csvData = data
+            .split('\n')
+            .map(row => row.split(','));
+
+          // Extract header row and data rows
+          headerRow = csvData[0];
+          dataRows = csvData.slice(2);
+
+          // Populate Select Test dropdown with options
+          const selectTest = document.getElementById("selectTest");
+          // Add an empty option as the initial default selection
+          const emptyOptionTest = document.createElement("option");
+          emptyOptionTest.text = "Please choose type";
+          emptyOptionTest.value = "";
+          selectTest.add(emptyOptionTest);
+
+          // Add the rest of the type options
+          for (let i = 1; i < headerRow.length; i++) {
+            const option = document.createElement("option");
+            option.text = headerRow[i];
+            option.value = i;
+            selectTest.add(option);
+          }
+
+          // Populate Select Age dropdown with options
+          const selectAge = document.getElementById("selectAge");
+          // Add an empty option as the initial default selection
+          const emptyOptionAge = document.createElement("option");
+          emptyOptionAge.text = "Please choose age";
+          emptyOptionAge.value = "";
+          selectAge.add(emptyOptionAge);
+
+          // Add the rest of the age options
+          for (let i = 0; i < dataRows.length; i++) {
+            const option = document.createElement("option");
+            option.text = dataRows[i][0];
+            option.value = dataRows[i][0];
+            selectAge.add(option);
+          }
+        })
+        .catch(error => console.error('Error fetching CSV file:', error));
+
+      // Attach event listeners to select boxes
+      const selectTest = document.getElementById("selectTest");
+      const selectAge = document.getElementById("selectAge");
+
+      selectTest.addEventListener('change', updateResult);
+      selectAge.addEventListener('change', updateResult);
+    });
+  </script>
+
+</body>
+
+</html>
